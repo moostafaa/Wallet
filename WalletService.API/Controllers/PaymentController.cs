@@ -1,13 +1,16 @@
 using System;
 using System.Threading.Tasks;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WalletService.Application.Commands.Wallet;
+using WalletService.Domain.Authorization;
 
 namespace WalletService.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class PaymentController : ControllerBase
     {
         private readonly IMediator _mediator;
@@ -18,6 +21,7 @@ namespace WalletService.API.Controllers
         }
         
         [HttpPost]
+        [Authorize(Policy = nameof(Permission.CreateTransaction))]
         public async Task<ActionResult<Guid>> InitiatePayment([FromBody] InitiatePaymentCommand command)
         {
             var paymentId = await _mediator.Send(command);
@@ -25,6 +29,7 @@ namespace WalletService.API.Controllers
         }
         
         [HttpPost("{id}/complete")]
+        [Authorize(Policy = nameof(Permission.ApproveTransaction))]
         public async Task<ActionResult> CompletePayment(Guid id)
         {
             var command = new CompletePaymentCommand { PaymentId = id };

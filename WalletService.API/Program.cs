@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using WalletService.Domain.Interfaces;
 using WalletService.Infrastructure.EventSourcing;
 using WalletService.Infrastructure.Repositories;
+using WalletService.Infrastructure.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +13,14 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Add Authentication & Authorization
+builder.Services.AddAuthentication()
+    .AddJwtBearer();
+
+builder.Services.AddAuthorization();
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionAuthorizationPolicyProvider>();
+builder.Services.AddScoped<IAuthorizationHandler, PermissionHandler>();
+
 // Register EventStore and SnapshotStore
 builder.Services.AddSingleton<IEventStore, EventStore>();
 builder.Services.AddSingleton<ISnapshotStore, SnapshotStore>();
@@ -18,6 +28,7 @@ builder.Services.AddSingleton<ISnapshotStore, SnapshotStore>();
 // Register repositories
 builder.Services.AddScoped<IWalletRepository, WalletRepository>();
 builder.Services.AddScoped<IWalletAccountRepository, WalletAccountRepository>();
+builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<IWithdrawalRequestRepository, WithdrawalRequestRepository>();
 builder.Services.AddScoped<ISettlementBatchRepository, SettlementBatchRepository>();
 
@@ -31,6 +42,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 

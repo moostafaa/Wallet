@@ -2,15 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WalletService.Application.Commands.Wallet;
 using WalletService.Application.Models.DTOs;
 using WalletService.Application.Queries.Wallet;
+using WalletService.Domain.Authorization;
 
 namespace WalletService.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class WalletController : ControllerBase
     {
         private readonly IMediator _mediator;
@@ -21,6 +24,7 @@ namespace WalletService.API.Controllers
         }
         
         [HttpPost]
+        [Authorize(Policy = nameof(Permission.CreateWallet))]
         public async Task<ActionResult<Guid>> CreateWallet([FromBody] CreateWalletCommand command)
         {
             var walletId = await _mediator.Send(command);
@@ -28,6 +32,7 @@ namespace WalletService.API.Controllers
         }
         
         [HttpGet("{id}")]
+        [Authorize(Policy = nameof(Permission.ViewWallet))]
         public async Task<ActionResult<WalletDto>> GetWallet(Guid id)
         {
             var query = new GetWalletQuery { WalletId = id };
@@ -40,6 +45,7 @@ namespace WalletService.API.Controllers
         }
         
         [HttpGet("account/{accountId}")]
+        [Authorize(Policy = nameof(Permission.ViewWallet))]
         public async Task<ActionResult<IEnumerable<WalletDto>>> GetAccountWallets(Guid accountId)
         {
             var query = new GetAccountWalletsQuery { AccountId = accountId };
@@ -48,6 +54,7 @@ namespace WalletService.API.Controllers
         }
         
         [HttpGet("{id}/transactions")]
+        [Authorize(Policy = nameof(Permission.ViewTransactions))]
         public async Task<ActionResult<IEnumerable<TransactionDto>>> GetWalletTransactions(
             Guid id,
             [FromQuery] DateTime? fromDate,
@@ -69,6 +76,7 @@ namespace WalletService.API.Controllers
         }
         
         [HttpPost("add-funds")]
+        [Authorize(Policy = nameof(Permission.CreateTransaction))]
         public async Task<ActionResult> AddFunds([FromBody] AddFundsCommand command)
         {
             var result = await _mediator.Send(command);
@@ -76,6 +84,7 @@ namespace WalletService.API.Controllers
         }
         
         [HttpPost("transfer")]
+        [Authorize(Policy = nameof(Permission.CreateTransaction))]
         public async Task<ActionResult> TransferFunds([FromBody] TransferFundsCommand command)
         {
             var result = await _mediator.Send(command);
@@ -83,6 +92,7 @@ namespace WalletService.API.Controllers
         }
         
         [HttpPost("withdraw")]
+        [Authorize(Policy = nameof(Permission.CreateTransaction))]
         public async Task<ActionResult> WithdrawFunds([FromBody] WithdrawFundsCommand command)
         {
             var result = await _mediator.Send(command);
@@ -90,6 +100,7 @@ namespace WalletService.API.Controllers
         }
         
         [HttpPost("{id}/deactivate")]
+        [Authorize(Policy = nameof(Permission.DeactivateWallet))]
         public async Task<ActionResult> DeactivateWallet(Guid id)
         {
             var command = new DeactivateWalletCommand { WalletId = id };
@@ -98,6 +109,7 @@ namespace WalletService.API.Controllers
         }
         
         [HttpPost("top-up")]
+        [Authorize(Policy = nameof(Permission.CreateTransaction))]
         public async Task<ActionResult<Guid>> InitiateTopUp([FromBody] InitiateTopUpCommand command)
         {
             var requestId = await _mediator.Send(command);
@@ -105,6 +117,7 @@ namespace WalletService.API.Controllers
         }
         
         [HttpPost("top-up/{requestId}/complete")]
+        [Authorize(Policy = nameof(Permission.ApproveTransaction))]
         public async Task<ActionResult> CompleteTopUp(Guid requestId, [FromBody] CompleteTopUpCommand command)
         {
             if (requestId != command.RequestId)
@@ -115,6 +128,7 @@ namespace WalletService.API.Controllers
         }
         
         [HttpPost("auto-top-up")]
+        [Authorize(Policy = nameof(Permission.CreateTransaction))]
         public async Task<ActionResult<Guid>> CreateAutoTopUpRule([FromBody] CreateAutoTopUpRuleCommand command)
         {
             var ruleId = await _mediator.Send(command);

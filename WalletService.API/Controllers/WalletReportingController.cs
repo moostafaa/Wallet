@@ -1,14 +1,17 @@
 using System;
 using System.Threading.Tasks;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WalletService.Application.Models.DTOs;
 using WalletService.Application.Queries.Wallet;
+using WalletService.Domain.Authorization;
 
 namespace WalletService.API.Controllers
 {
     [ApiController]
     [Route("api/wallet-reporting")]
+    [Authorize]
     public class WalletReportingController : ControllerBase
     {
         private readonly IMediator _mediator;
@@ -19,6 +22,7 @@ namespace WalletService.API.Controllers
         }
         
         [HttpGet("account/{accountId}/summary")]
+        [Authorize(Policy = nameof(Permission.ViewAccount))]
         public async Task<ActionResult<AccountSummaryDto>> GetAccountSummary(Guid accountId)
         {
             var query = new GetAccountSummaryQuery { AccountId = accountId };
@@ -31,6 +35,7 @@ namespace WalletService.API.Controllers
         }
         
         [HttpGet("wallet/{walletId}/summary")]
+        [Authorize(Policy = nameof(Permission.ViewWallet))]
         public async Task<ActionResult<WalletSummaryDto>> GetWalletSummary(Guid walletId)
         {
             var query = new GetWalletSummaryQuery { WalletId = walletId };
@@ -43,6 +48,7 @@ namespace WalletService.API.Controllers
         }
         
         [HttpGet("wallet/{walletId}/transactions")]
+        [Authorize(Policy = nameof(Permission.ViewTransactions))]
         public async Task<ActionResult<TransactionHistoryDto>> GetTransactionHistory(
             Guid walletId,
             [FromQuery] DateTime? fromDate,
